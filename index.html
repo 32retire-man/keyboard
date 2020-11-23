@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>キーボードでキーボード</title>
+</head>
+<body>
+    <script type="text/javascript">
+        let audio;
+        
+        //音階を再生
+        //node ノード(ド=48,ド#=49…)
+        //sec 再生秒数
+        function play(node,sec)
+        {
+            stop();
+            if(node>=96)return;
+        
+            Hz=11025;//サンプリングレート
+        
+            //Waveデータ
+            let bytes=new Uint8Array(Math.floor(Hz*sec)+100);
+        
+            //Waveヘッダー作成
+            let header="524946460000000057415645666D74201000000001000100112B0000112B0000010008006461746100000000";
+            for(fp = 0; fp < header.length/2; fp++){
+                bytes[fp]=parseInt(header.substr(fp*2,2),16);
+            }
+        
+            //音階(ドド#レ…シ)の周波数(1オクターブ下がると1/2倍)
+            let freqs=[4180, 4428, 4708, 4968, 5264, 5592, 5884, 6300, 6676, 6988, 7476, 7848];
+        
+            //1サンプルあたりの位相計算
+            octave = Math.floor(node/12); //オクターブ
+            freq = freqs[node%12] / (1<<(7-octave)); //周波数
+            phase = 6.28 / (Hz / freq);
+        
+            //波形作成
+            for (t = 0; t < Math.floor(Hz*sec); t++){
+                bytes[fp++] = Math.floor(Math.sin(phase*t)*127)+128;
+            }
+        
+            //データ補正
+            setLittleEndian(bytes,4,fp-8);  //ファイルサイズ
+            setLittleEndian(bytes,24,Hz);   //サンプリングレート
+            setLittleEndian(bytes,40,fp-44);//波形サイズ
+        
+            //BASE64変換してオーディオ作成
+            str="";
+            for (i=0;i<fp;i++){str+=String.fromCharCode(bytes[i]);}
+            audio=new Audio("data:audio/wav;base64,"+btoa(str));
+            audio.play();
+        }
+        
+        function stop()
+        {
+            if (audio&&!audio.ended){audio.pause();audio.currentTime=0;}
+        }
+        
+        function setLittleEndian(bytes,p,data)
+        {
+            bytes[p] = (data & 0xFF);
+            bytes[p+1] = ((data >> 8) & 0xFF);
+            bytes[p+2] = ((data >> 16) & 0xFF);
+            bytes[p+3] = ((data >> 24) & 0xFF);
+        }
+
+        //キーボードが押された時の処理
+        document.onkeydown = function(e) {
+
+            switch(e.keyCode) {
+                case 65: //A:ド
+                    play(48,1);
+                    break;
+                case 87: //W:ド#
+                    play(49,1);
+                    break;
+                case 83: //S:レ
+                    play(50,1);
+                    break;
+                case 69: //E:レ#
+                    play(51,1);
+                    break;
+                case 68: //D:ミ
+                    play(52,1);
+                    break;
+                case 70: //F:ファ
+                    play(53,1);
+                    break;
+                case 84: //T:ファ#
+                    play(54,1);
+                    break;
+                case 71: //G:ソ
+                    play(55,1);
+                    break;
+                case 89: //Y:ソ#
+                    play(56,1);
+                    break;
+                case 72: //G:ラ
+                    play(57,1);
+                    break;
+                case 85: //U:ラ#
+                    play(58,1);
+                    break;
+                case 74: //J:シ
+                    play(59,1);
+                    break;
+                case 75: //K:ド
+                    play(60,1);
+                    break;
+            }
+        }
+
+    </script>
+
+    <h1>キーボードでキーボード作ってみた</h1>
+    <h3>下のキーを押すと、対応した音が鳴るよ♪ これで君も今日からピアニスト！</h3>
+    <p>A:ド</p>
+    <p>W:ド#</p>
+    <p>S:レ</p>
+    <p>E:レ#</p>
+    <p>D:ミ</p>
+    <p>F:ファ</p>
+    <p>T:ファ#</p>
+    <p>G:ソ</p>
+    <p>Y:ソ#</p>
+    <p>H:ラ</p>
+    <p>U:ラ#</p>
+    <p>J:シ</p>
+    <p>K:ド</p>
+
+    <!-- <input type="button" value="ド" onclick="javascript:play(48,1)">
+    <input type="button" value="レ" onclick="javascript:play(50,1)">
+    <input type="button" value="ミ" onclick="javascript:play(52,1)">
+    <input type="button" value="ファ" onclick="javascript:play(53,1)">
+    <input type="button" value="ソ" onclick="javascript:play(55,1)">
+    <input type="button" value="ラ" onclick="javascript:play(57,1)">
+    <input type="button" value="シ" onclick="javascript:play(59,1)">
+    <input type="button" value="ド" onclick="javascript:play(60,1)">
+    <input type="button" value="停止" onclick="javascript:stop()"> -->
+
+</body>
+</html>
